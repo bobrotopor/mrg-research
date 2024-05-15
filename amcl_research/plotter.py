@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt 
 from pathlib import Path
 
@@ -28,12 +29,18 @@ def configure_mpl_plot() -> None:
 
 
 def shift_arr_to_zero(data: pd.Series):
-    return data - data[0]
+    data-=data[0]
+    return
+
+def revert_ang_2pi(df:  dict[pd.DataFrame]):
+    idx = df.index[df['rot_err'] < -2.5]
+    df.loc[idx, 'rot_err'] += 2*np.pi
+    return
 
 def process_raw_df_dict(df_dict: dict[pd.DataFrame], shift_to_zero_param: str = 'time'):
     for key in df_dict.keys():
-        param_history = df_dict[key][shift_to_zero_param]
-        df_dict[key][shift_to_zero_param] = shift_arr_to_zero(param_history)
+        shift_arr_to_zero(df_dict[key][shift_to_zero_param])
+        revert_ang_2pi(df_dict[key])
 
 def head_df_dict(df_dict: dict[pd.DataFrame]):
     for key in df_dict.keys():
@@ -41,14 +48,29 @@ def head_df_dict(df_dict: dict[pd.DataFrame]):
 
 
 def plot_df_dict(title: str, df_dict: dict[pd.DataFrame]):
-    plt.figure(title)
-    plt.title(title)
+    
     legend = []
+
+    fig = plt.figure(title)
+    fig.suptitle(title)
+    gs = fig.add_gridspec(2, 1)
+    trans_err = fig.add_subplot(gs[0, 0])
+    rot_err = fig.add_subplot(gs[1, 0], sharex=trans_err)
+
+    trans_err.set(ylabel='Ошибка смещения, [м]')
+    rot_err.set(xlabel='Время, [с]', ylabel='Ошибка угла, [рад]')
+
     for key in df_dict.keys():
         legend.append(key)
-        plt.plot(df_dict[key]['time'], df_dict[key]['trans_err'])
-    plt.legend(legend)
-    plt.grid()
+        trans_err.plot(df_dict[key]['time'], df_dict[key]['trans_err'])
+        rot_err.plot(df_dict[key]['time'], df_dict[key]['rot_err'])
+
+    trans_err.grid()
+    rot_err.grid()
+    
+    trans_err.legend(legend)
+    rot_err.legend(legend)
+
 
 
 if __name__ == '__main__':
@@ -100,9 +122,13 @@ if __name__ == '__main__':
     process_raw_df_dict(complex)
 
     # печать
+    turning = '(Движение МР: разворот на месте - 2.84 рад/с)'
+    moving_forward = '(Движение МР: по прямой - 0.6 м/с)'
+    init_loc_amcl = 'Рассогласование локализации AMCL'
+    
     configure_mpl_plot()
-    plot_df_dict('Начальная угловая ошибка\n(вращение МР на месте)', ang_inplace)
-    plot_df_dict('Начальная ошибка смещения\n(вращение МР на месте)', inplace_shift)
-    plot_df_dict('Начальная ошибка смещения\n(движение МР по прямой с макс. скоростью)', shift_vel_max)
-    plot_df_dict('Начальное смещение и поворот\n(движение МР по прямой с макс. скоростью)', complex)
+    plot_df_dict(f'{init_loc_amcl} по углу\n{turning}', ang_inplace)
+    plot_df_dict(f'{init_loc_amcl} по смещению\n{turning}', inplace_shift)
+    plot_df_dict(f'{init_loc_amcl} по смещению\n{moving_forward}', shift_vel_max)
+    plot_df_dict(f'{init_loc_amcl} по смещению и повороту\n{moving_forward}', complex)
     plt.show()
