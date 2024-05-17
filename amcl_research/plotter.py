@@ -62,8 +62,8 @@ def plot_df_dict(title: str, df_dict: dict[pd.DataFrame]):
 
     for key in df_dict.keys():
         legend.append(key)
-        trans_err.plot(df_dict[key]['time'], df_dict[key]['trans_err'])
-        rot_err.plot(df_dict[key]['time'], df_dict[key]['rot_err'])
+        trans_err.plot(df_dict[key]['time'], df_dict[key]['trans_err'], lw=2)
+        rot_err.plot(df_dict[key]['time'], df_dict[key]['rot_err'], lw=2)
 
     trans_err.grid()
     rot_err.grid()
