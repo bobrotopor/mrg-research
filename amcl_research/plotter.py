@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt 
 from pathlib import Path
 
+
 AMCL_N_NAV_DIR = Path(__file__).parent / 'amcl_n_nav'
 AMCL_N_TELEOP_DIR = Path(__file__).parent / 'amcl_n_teleop'
 
@@ -26,7 +27,6 @@ def configure_mpl_plot() -> None:
         # 'text.usetex': True,
         # 'axes.prop_cycle': cycler('color',[...]),
     })
-
 
 def shift_arr_to_zero(data: pd.Series):
     data-=data[0]
