@@ -1,4 +1,4 @@
-
+"""Анимация движения эталонной модели МР."""
 
 import numpy as np
 from numpy.typing import NDArray
@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 from trajectory_gen import TrajGenGPR
 
 import matplotlib.animation as animation
-
 
 
 if __name__ == '__main__':
@@ -26,14 +25,21 @@ if __name__ == '__main__':
     x = traj[:,1]
     y = traj[:,2]
     
-    # plt.figure('Параметры управления')
-    # plt.title('Параметры управления')
-    # plt.plot(traj[:, 0], theta*180/np.pi)
-    # plt.grid()
-    # plt.show()
+
+    plt.figure('Параметры управления')
+    plt.title('Параметры управления')
+    plt.plot(traj[:, 0], theta*180/np.pi)
+    plt.grid()
+
+
     L = 3
+    shift_x = 2
+    shift_y = 2
     fig = plt.figure(figsize=(5, 4))
-    ax = fig.add_subplot(autoscale_on=False, xlim=(-L, L), ylim=(-L, L))
+    ax = fig.add_subplot(
+        autoscale_on=False, 
+        xlim=(-L + shift_x, L + shift_x), ylim=(-L + shift_y, L + shift_y),
+    )
     ax.set_aspect('equal')
     ax.grid()
 
@@ -48,12 +54,9 @@ if __name__ == '__main__':
         thisx = [x[i]]      # , x[i] + 0.3*np.cos(theta[i])
         thisy = [y[i]]      # , x[i] + 0.3*np.sin(theta[i])
 
-
         line.set_data(thisx, thisy)
-        # trace.set_data(history_x, history_y)
         time_text.set_text(time_template % time[i])
         return line, time_text
-
 
 
     ani = animation.FuncAnimation(
