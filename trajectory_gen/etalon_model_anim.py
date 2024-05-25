@@ -9,6 +9,21 @@ from trajectory_gen import TrajGenGPR
 import matplotlib.animation as animation
 
 
+
+def get_arrow(x,y,theta):
+    arrow_len = 0.05
+    x_arrow = [
+        arrow_len*np.cos(theta + 2*np.pi/3) + x, 
+        arrow_len*np.cos(theta - 2*np.pi/3) + x,
+        x,
+    ]
+    y_arrow = [
+        arrow_len*np.sin(theta + 2*np.pi/3) + y, 
+        arrow_len*np.sin(theta - 2*np.pi/3) + y,
+        y,
+    ]
+    return x_arrow, y_arrow
+
 if __name__ == '__main__':
 
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
@@ -43,7 +58,7 @@ if __name__ == '__main__':
     ax.set_aspect('equal')
     ax.grid()
 
-    line, = ax.plot([], [], 'o-', lw=2)
+    line, = ax.plot([], [], lw=3, c='g')
     ax.scatter(traj[:, 1], traj[:,2], c=traj[:, 0], s=0.8)
     # trace, = plt.ax.plot([], [], '.-', lw=1, ms=2)
     time_template = 'time = %.1fs'
@@ -51,8 +66,11 @@ if __name__ == '__main__':
 
 
     def animate(i):
-        thisx = [x[i]]      # , x[i] + 0.3*np.cos(theta[i])
-        thisy = [y[i]]      # , x[i] + 0.3*np.sin(theta[i])
+        x_ = x[i] + vel[i]*np.cos(theta[i])
+        y_ = y[i] + vel[i]*np.sin(theta[i])
+        x_arrow, y_arrow = get_arrow(x=x_, y=y_, theta=theta[i])
+        thisx = [x[i], x_] + x_arrow    
+        thisy = [y[i], y_] + y_arrow     
 
         line.set_data(thisx, thisy)
         time_text.set_text(time_template % time[i])
