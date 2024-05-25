@@ -3,8 +3,10 @@ import numpy as np
 from matplotlib import pyplot as plt 
 from pathlib import Path
 
+
 AMCL_N_NAV_DIR = Path(__file__).parent / 'amcl_n_nav'
 AMCL_N_TELEOP_DIR = Path(__file__).parent / 'amcl_n_teleop'
+TRACKING_DIR = Path(__file__).parent / 'tracking'
 
 
 def configure_mpl_plot() -> None:
@@ -26,7 +28,6 @@ def configure_mpl_plot() -> None:
         # 'text.usetex': True,
         # 'axes.prop_cycle': cycler('color',[...]),
     })
-
 
 def shift_arr_to_zero(data: pd.Series):
     data-=data[0]
@@ -121,6 +122,23 @@ if __name__ == '__main__':
     }
     process_raw_df_dict(complex)
 
+    tracking_race1 = pd.read_csv(TRACKING_DIR / 'tracking_race1.csv')
+    tracking_race2 = pd.read_csv(TRACKING_DIR / 'tracking_race2.csv')
+    tracking_race3 = pd.read_csv(TRACKING_DIR / 'tracking_race3.csv')
+
+    tracking_race = {
+        "race1": tracking_race1,
+        "race2": tracking_race2,
+        "race3": tracking_race3,
+    }
+    process_raw_df_dict(tracking_race)
+
+    tracking_linear = {
+        "linear_04":  pd.read_csv(TRACKING_DIR / 'tracking_04_vel.csv'),
+        "linear_06":  pd.read_csv(TRACKING_DIR / 'tracking_06_vel.csv'),
+    }
+    process_raw_df_dict(tracking_linear)
+
     # печать
     turning = '(Движение МР: разворот на месте - 2.84 рад/с)'
     moving_forward = '(Движение МР: по прямой - 0.6 м/с)'
@@ -131,4 +149,6 @@ if __name__ == '__main__':
     plot_df_dict(f'{init_loc_amcl} по смещению\n{turning}', inplace_shift)
     plot_df_dict(f'{init_loc_amcl} по смещению\n{moving_forward}', shift_vel_max)
     plot_df_dict(f'{init_loc_amcl} по смещению и повороту\n{moving_forward}', complex)
+    plot_df_dict('Отслеживание локации\n(Движение МР: произвольная траектория)', tracking_race)
+    plot_df_dict(f'Отслеживание локации\n{moving_forward}', tracking_linear)
     plt.show()
