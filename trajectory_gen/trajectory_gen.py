@@ -1,3 +1,5 @@
+
+
 import numpy as np
 from numpy.typing import NDArray
 from matplotlib import pyplot as plt
@@ -15,8 +17,11 @@ class TrajGenGPR(object):
         else:
             self.turning_vel = turning_vel
 
+        self.traj = None
+
+
     def gen_gpr_scanning_traj(self, points: NDArray, line_types: list, gpr_flags: list):
-        
+        """Сгенерировать всю траекторию движения МР, с метками времени и флажками включения георадара."""
         is_first_iter = True
         scan_traj = np.empty((0,4)) # time/x/y/gpr_flags
         line_types = ['pass'] + line_types
@@ -26,14 +31,14 @@ class TrajGenGPR(object):
             p_start = points[idx - 1]
             p_end = points[idx]
             
-            if line_types[idx] == 'line':
+            if line_types[idx] == 'l':
                 if is_first_iter is True:
                     section_points = self.gen_line(p1=p_start, p2=p_end, init_time=0)
                     is_first_iter = False
                 else:
                     section_points = self.gen_line(p1=p_start, p2=p_end, init_time=scan_traj[-1][0])
 
-            if line_types[idx] == 'curve':
+            if line_types[idx] == 'c':
                 continue
 
             n = section_points.shape[0]
@@ -41,7 +46,7 @@ class TrajGenGPR(object):
             part_traj = np.hstack((section_points, g_flags))
             scan_traj = np.vstack((scan_traj, part_traj))
 
-
+        self.traj = scan_traj
         return scan_traj
 
             
@@ -64,18 +69,48 @@ class TrajGenGPR(object):
         return np.hstack((t_arr, x_arr, y_arr))
 
 
+    def get_control_from_traj(self, traj: NDArray):
+        
+        theta = [0, 0]  
+        omega = [0, 0]
+        vel = [0, 0]
+        for idx in range(2, traj.shape[0]):
+            dx_dt = (traj[idx][1] - traj[idx-1][1]) / self.dt
+            dy_dt = (traj[idx][2] - traj[idx-1][2]) / self.dt
+            pr_dx_dt = (traj[idx-1][1] - traj[idx-2][1]) / self.dt
+            pr_dy_dt = (traj[idx-1][2] - traj[idx-2][2]) / self.dt
+            # vel.append(np.sqrt)
+            ang = np.arctan2(dy_dt, dx_dt)
+            pr_ang = np.arctan2(pr_dy_dt, pr_dx_dt)
+            omega.append((ang-pr_ang)/self.dt)
+            theta.append(ang)
+            vel.append(np.sqrt(dx_dt**2 + dy_dt**2))
+        
+        return np.array(vel), np.array(omega), np.array(theta)
+    
+
 
 if __name__ == '__main__':
-    tj = TrajGenGPR(dt=0.05, scan_vel=0.5)
+    tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
 
-    points = np.array([[0,0],[0,1],[1,0.5],[1,-0.5]])
-    l_types = ['line', 'line', 'line']
-    gpr_flags = [1,0,1]
+    points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
+    l_types = ['l', 'l', 'l', 'l', 'l']
+    gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
 
-    print(traj)
+
     plt.figure('Траектория')
     plt.title('Траектория')
     plt.scatter(traj[:, 1], traj[:,2], c=traj[:, 0])
     plt.grid()
+
+
+
+    vel, omega, theta = tj.get_control_from_traj(traj)
+
+    plt.figure('Параметры управления')
+    plt.title('Параметры управления')
+    plt.plot(traj[:, 0][2:], theta[2:]*180/np.pi)
+    plt.grid()
     plt.show()
+
