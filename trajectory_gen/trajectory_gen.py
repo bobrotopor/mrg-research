@@ -40,7 +40,7 @@ class TrajGenGPR(object):
                     section_points = self.gen_line(p1=p_start, p2=p_end, init_time=scan_traj[-1][0])
 
             if line_types[idx] == 'c':
-                continue
+                section_points = self.gen_circ_arc(prev_p1=scan_traj[-1][1:], p1=p_start, p2=p_end, init_time=scan_traj[-1][0])
 
             # n = section_points.shape[0]
             # g_flags = gpr_flags[idx] + np.zeros((n,1))
@@ -69,7 +69,35 @@ class TrajGenGPR(object):
         x_arr = x_arr.reshape((n,1))
         y_arr = y_arr.reshape((n,1))
         return np.hstack((t_arr, x_arr, y_arr))
+    
 
+    def gen_circ_arc(self, prev_p1: NDArray, p1: NDArray, p2: NDArray, init_time: float) -> NDArray:
+        
+
+        diam = np.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+        to_center_vec = np.array([p2[0] - p1[0], p2[1] - p1[1]])
+        to_center_vec *= 1 / diam
+        radius = diam/2
+        center = radius * to_center_vec + p1
+
+        to_center_vec3 = np.array([to_center_vec[0], to_center_vec[1], 0])
+        prev_vec3 = np.array([p1[0] - prev_p1[0], p1[1] - prev_p1[1], 0])
+        arc_build_dir = np.sign(np.cross(prev_vec3,to_center_vec3)[2]) 
+
+        step =  self.scan_vel * self.dt
+        ang_step = step/radius
+        rot_ang = np.arctan2(-to_center_vec[1], -to_center_vec[0])
+        
+        n = int(np.ceil(np.pi * radius / step))
+        t_arr = init_time + np.array([ idx*self.dt for idx in range(1,n+1)])
+        x_arr = np.array([ center[0] + arc_build_dir*radius*np.cos(rot_ang+idx*ang_step) for idx in range(n)])
+        y_arr = np.array([ center[1] + arc_build_dir*radius*np.sin(rot_ang+idx*ang_step) for idx in range(n)])
+        
+        t_arr = t_arr.reshape((n,1))
+        x_arr = x_arr.reshape((n,1))
+        y_arr = y_arr.reshape((n,1))
+        
+        return np.hstack((t_arr, x_arr, y_arr))
 
     def control_from_traj(self, traj: NDArray):
         
@@ -104,8 +132,8 @@ class TrajGenGPR(object):
 if __name__ == '__main__':
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
 
-    points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
-    l_types = ['l', 'l', 'l', 'l', 'l']
+    points = np.array([[0,0],[0,2],[0.35,2],[0.35,-1], [0.6,-1], [0.6,2]])
+    l_types = ['l', 'c', 'l', 'c', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
 
@@ -116,9 +144,16 @@ if __name__ == '__main__':
 
     ctrl = tj.control_from_traj(traj)
 
-    plt.figure('Параметры управления')
-    plt.title('Параметры управления')
+    plt.figure('theta')
+    plt.title('theta')
     plt.plot(traj[:, 0][2:], ctrl[:, 0][2:]*180/np.pi)
     plt.grid()
+
+    plt.figure('velocity')
+    plt.title('velocity')
+    plt.plot(traj[:, 0][2:], ctrl[:, 2][2:])
+    plt.grid()
+
+
     plt.show()
 
