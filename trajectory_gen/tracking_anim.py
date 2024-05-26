@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 
 from trajectory_gen import TrajGenGPR
-from controller import Controller
+from tracking_ctrl import Controller
 
 import matplotlib.animation as animation
 
@@ -38,10 +38,10 @@ def get_arrow(x,y,theta):
 if __name__ == '__main__':
 
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
-    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='approx')
+    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='rot')
 
-    points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
-    l_types = ['l', 'l', 'l', 'l', 'l']
+    points = np.array([[0,0],[0,1],[0.35,1],[0.35,-0.25], [0.6,-0.25], [0.6,1.25]])
+    l_types = ['l', 'c', 'l', 'c', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
     ctrl = tj.control_from_traj(traj)

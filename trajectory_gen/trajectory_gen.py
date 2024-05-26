@@ -88,10 +88,11 @@ class TrajGenGPR(object):
         ang_step = step/radius
         rot_ang = np.arctan2(-to_center_vec[1], -to_center_vec[0])
         
+        
         n = int(np.ceil(np.pi * radius / step))
         t_arr = init_time + np.array([ idx*self.dt for idx in range(1,n+1)])
-        x_arr = np.array([ center[0] + arc_build_dir*radius*np.cos(rot_ang+idx*ang_step) for idx in range(n)])
-        y_arr = np.array([ center[1] + arc_build_dir*radius*np.sin(rot_ang+idx*ang_step) for idx in range(n)])
+        x_arr = np.array([ center[0] + radius*np.cos(rot_ang+idx*arc_build_dir*ang_step) for idx in range(n)])
+        y_arr = np.array([ center[1] + radius*np.sin(rot_ang+idx*arc_build_dir*ang_step) for idx in range(n)])
         
         t_arr = t_arr.reshape((n,1))
         x_arr = x_arr.reshape((n,1))
