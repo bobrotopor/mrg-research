@@ -132,7 +132,7 @@ class TrajGenGPR(object):
 if __name__ == '__main__':
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
 
-    points = np.array([[0,0],[0,2],[0.35,2],[0.35,-1], [0.6,-1], [0.6,2]])
+    points = np.array([[0,0],[0,1],[0.35,1],[0.35,-0.25], [0.6,-0.25], [0.6,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
