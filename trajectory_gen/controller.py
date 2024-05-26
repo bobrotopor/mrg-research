@@ -1,11 +1,11 @@
-
-
+"""Контроллер модели МР."""
 
 import numpy as np
 from numpy.typing import NDArray
 from numpy import sin, cos
 
-def unpack_vec3(odom: NDArray) -> [float,float,float]:
+
+def unpack_vec3(odom: NDArray) -> [float, float, float]:
     x = odom[0]
     y = odom[1]
     z = odom[2]
@@ -20,18 +20,17 @@ class Controller():
         self.k3 = k[2]
         self.dt = dt
         self.ctrl_type = ctrl_type
-        # self.prev_odom = np.zeros(3)
-        # self.prev_errors = np.zeros(3)
-        
         self.odom =np.array(init_odom)
-        # self.err = np.zeros(3)
+
+        if ctrl_type != 'approx' and ctrl_type !='rot':
+            raise Exception('Ошибка имени контроллера!')
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
         err = self.odom - et_odom
         return err
     
-    def calc_macho_err(self, et_odom: NDArray) -> NDArray:
+    def calc_rot_method_err(self, et_odom: NDArray) -> NDArray:
         et_x,et_y,et_theta = unpack_vec3(et_odom)
         x,y,theta = unpack_vec3(self.odom)
 
@@ -41,7 +40,8 @@ class Controller():
         err[2] = et_theta - theta
         return err
     
-    def approx_controller(self, et_theta, et_vel, et_omega, err):
+    def approx_ctrl(self, et_theta, et_vel, et_omega, err):
+        """Регулятор, полученный методом приближений при малых ошибках."""
         c1 = -np.array([cos(et_theta), sin(et_theta), 0])
         c2 = -np.array([et_vel*sin(et_theta), et_vel*cos(et_theta), self.k2])
 
@@ -53,7 +53,8 @@ class Controller():
 
         return vel, omega
     
-    def macho_controller(self, et_vel, et_omega, err):
+    def rot_method_ctrl(self, et_vel, et_omega, err):
+        """Регулятор полученный методом матрицы поворота."""
         vel = et_vel*cos(err[2]) + self.k1*err[0]
         omega = et_omega + self.k2*err[1]*et_vel*sin(err[2])/err[2] + self.k3*err[2]
         return vel, omega
@@ -66,10 +67,10 @@ class Controller():
         
         if self.ctrl_type == 'approx':
             err = self.calc_err(et_odom)
-            vel,omega = self.approx_controller(et_theta, et_vel, et_omega, err)
-        if self.ctrl_type == 'macho':
-            err = self.calc_macho_err(et_odom)
-            vel,omega = self.macho_controller(et_vel, et_omega, err)
+            vel,omega = self.approx_ctrl(et_theta, et_vel, et_omega, err)
+        if self.ctrl_type == 'rot':
+            err = self.calc_rot_method_err(et_odom)
+            vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
 
         x,y,theta = unpack_vec3(self.odom)
         self.odom[0] = vel*cos(theta)*self.dt + x

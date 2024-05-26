@@ -38,7 +38,7 @@ def get_arrow(x,y,theta):
 if __name__ == '__main__':
 
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
-    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='macho')
+    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='approx')
 
     points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
     l_types = ['l', 'l', 'l', 'l', 'l']
@@ -60,9 +60,9 @@ if __name__ == '__main__':
     plt.grid()
 
 
-    L = 3
-    shift_x = 2
-    shift_y = 2
+    L = 2
+    shift_x = 1
+    shift_y = 1
     fig = plt.figure(figsize=(7, 6))
     ax = fig.add_subplot(
         autoscale_on=False, 
