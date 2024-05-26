@@ -11,39 +11,50 @@ import matplotlib.animation as animation
 
 
 def get_arrow(x,y,theta):
-    arrow_len = 0.05
+    arr_parts_len = 0.05
+    base_len = 0.15
+    arr_ang = 2.5
+    arrow_end_x = base_len*np.cos(theta) + x
+    arrow_end_y = base_len*np.sin(theta) + y
+
     x_arrow = [
-        arrow_len*np.cos(theta + 2*np.pi/3) + x, 
-        arrow_len*np.cos(theta - 2*np.pi/3) + x,
+        arrow_end_x,
+        arr_parts_len*np.cos(theta + arr_ang) + arrow_end_x, 
+        arr_parts_len*np.cos(theta - arr_ang) + arrow_end_x,
+        arrow_end_x,
         x,
     ]
     y_arrow = [
-        arrow_len*np.sin(theta + 2*np.pi/3) + y, 
-        arrow_len*np.sin(theta - 2*np.pi/3) + y,
+        arrow_end_y,
+        arr_parts_len*np.sin(theta + arr_ang) + arrow_end_y, 
+        arr_parts_len*np.sin(theta - arr_ang) + arrow_end_y,
+        arrow_end_y,
         y,
     ]
     return x_arrow, y_arrow
 
+
 if __name__ == '__main__':
 
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
+    # mr_ctrl = Controller(dt=0.01, k1=1, k2=10, init_x=0.05, init_y=0.05, init_theta=0)
 
     points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
     l_types = ['l', 'l', 'l', 'l', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
-
-
-    vel, omega, theta = tj.get_control_from_traj(traj)
+    ctrl = tj.control_from_traj(traj)
 
     time = traj[:,0]
-    x = traj[:,1]
-    y = traj[:,2]
+    et_x = traj[:,1]
+    et_y = traj[:,2]
+    et_theta = ctrl[:,0]
+
     
 
     plt.figure('Параметры управления')
     plt.title('Параметры управления')
-    plt.plot(traj[:, 0], theta*180/np.pi)
+    plt.plot(traj[:, 0], et_theta*180/np.pi)
     plt.grid()
 
 
@@ -58,7 +69,8 @@ if __name__ == '__main__':
     ax.set_aspect('equal')
     ax.grid()
 
-    line, = ax.plot([], [], lw=3, c='g')
+    etalon, = ax.plot([], [], lw=3, c='g')
+    # real, = ax.plot([], [], lw=3, c='r')
     ax.scatter(traj[:, 1], traj[:,2], c=traj[:, 0], s=0.8)
     # trace, = plt.ax.plot([], [], '.-', lw=1, ms=2)
     time_template = 'time = %.1fs'
@@ -66,17 +78,15 @@ if __name__ == '__main__':
 
 
     def animate(i):
-        x_ = x[i] + vel[i]*np.cos(theta[i])
-        y_ = y[i] + vel[i]*np.sin(theta[i])
-        x_arrow, y_arrow = get_arrow(x=x_, y=y_, theta=theta[i])
-        thisx = [x[i], x_] + x_arrow    
-        thisy = [y[i], y_] + y_arrow     
+        # et_odom = np.array([])
+        # mr_ctrl.tick(et_odom=traj[1:], et_ctrl)
+        anim_et_x, anim_et_y = get_arrow(x=et_x[i], y=et_y[i], theta=et_theta[i])
 
-        line.set_data(thisx, thisy)
+        etalon.set_data(anim_et_x, anim_et_y)
         time_text.set_text(time_template % time[i])
-        return line, time_text
+        return etalon, time_text
 
 
     ani = animation.FuncAnimation(
-        fig, animate, len(y), interval=time[-1], blit=True)
+        fig, animate, len(et_y), interval=time[-1], blit=True)
     plt.show()

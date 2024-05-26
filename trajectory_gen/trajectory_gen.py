@@ -18,12 +18,13 @@ class TrajGenGPR(object):
             self.turning_vel = turning_vel
 
         self.traj = None
+        self.control = None
 
 
     def gen_gpr_scanning_traj(self, points: NDArray, line_types: list, gpr_flags: list):
         """Сгенерировать всю траекторию движения МР, с метками времени и флажками включения георадара."""
         is_first_iter = True
-        scan_traj = np.empty((0,4)) # time/x/y/gpr_flags
+        scan_traj = np.empty((0,3)) # time/x/y/gpr_flags
         line_types = ['pass'] + line_types
         gpr_flags = [0] + gpr_flags
         
@@ -41,10 +42,11 @@ class TrajGenGPR(object):
             if line_types[idx] == 'c':
                 continue
 
-            n = section_points.shape[0]
-            g_flags = gpr_flags[idx] + np.zeros((n,1))
-            part_traj = np.hstack((section_points, g_flags))
-            scan_traj = np.vstack((scan_traj, part_traj))
+            # n = section_points.shape[0]
+            # g_flags = gpr_flags[idx] + np.zeros((n,1))
+            # part_traj = np.hstack((section_points, g_flags))
+            # scan_traj = np.vstack((scan_traj, part_traj))
+            scan_traj = np.vstack((scan_traj, section_points))
 
         self.traj = scan_traj
         return scan_traj
@@ -69,7 +71,7 @@ class TrajGenGPR(object):
         return np.hstack((t_arr, x_arr, y_arr))
 
 
-    def get_control_from_traj(self, traj: NDArray):
+    def control_from_traj(self, traj: NDArray):
         
         theta = [0, 0]  
         omega = [0, 0]
@@ -86,7 +88,16 @@ class TrajGenGPR(object):
             theta.append(ang)
             vel.append(np.sqrt(dx_dt**2 + dy_dt**2))
         
-        return np.array(vel), np.array(omega), np.array(theta)
+        n = traj.shape[0]
+        theta = np.array(theta).reshape((n,1))
+        omega = np.array(omega).reshape((n,1))
+        vel = np.array(vel).reshape((n,1))
+        return np.hstack((theta, omega, vel))
+    
+    
+    def etalon_from_latest_calcs(self):
+        ctrl = self.control_from_traj(self.traj)
+        return np.hstack((self.traj, ctrl))
     
 
 
@@ -98,19 +109,16 @@ if __name__ == '__main__':
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
 
-
     plt.figure('Траектория')
     plt.title('Траектория')
     plt.scatter(traj[:, 1], traj[:,2], c=traj[:, 0])
     plt.grid()
 
-
-
-    vel, omega, theta = tj.get_control_from_traj(traj)
+    ctrl = tj.control_from_traj(traj)
 
     plt.figure('Параметры управления')
     plt.title('Параметры управления')
-    plt.plot(traj[:, 0][2:], theta[2:]*180/np.pi)
+    plt.plot(traj[:, 0][2:], ctrl[:, 0][2:]*180/np.pi)
     plt.grid()
     plt.show()
 
