@@ -1,6 +1,6 @@
 
 
-from .trajectory_gen import TrajGenGPR
+
 import numpy as np
 from numpy.typing import NDArray
 from numpy import sin, cos
@@ -34,7 +34,7 @@ class Controller():
         et_omega = et_ctrl[1] 
 
         err = self.calc_err(et_odom)
-        c1 = -np.array([cos(et_theta), sin(et_theta)])
+        c1 = -np.array([cos(et_theta), sin(et_theta), 0])
         c2 = -np.array([et_vel*sin(et_theta), et_vel*cos(et_theta), self.k2])
 
         u1 = self.k1 * err @ c1
