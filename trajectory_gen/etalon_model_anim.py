@@ -38,7 +38,7 @@ def get_arrow(x,y,theta):
 if __name__ == '__main__':
 
     tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
-    mr_ctrl = Controller(dt=0.01, k1=1, k2=10, init_x=0.15, init_y=0.15, init_theta=0.1)
+    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='macho')
 
     points = np.array([[0,0],[0,2],[0.25,2.25],[0.75,2.25], [1,2], [1,0]])
     l_types = ['l', 'l', 'l', 'l', 'l']
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     L = 3
     shift_x = 2
     shift_y = 2
-    fig = plt.figure(figsize=(5, 4))
+    fig = plt.figure(figsize=(7, 6))
     ax = fig.add_subplot(
         autoscale_on=False, 
         xlim=(-L + shift_x, L + shift_x), ylim=(-L + shift_y, L + shift_y),
@@ -73,12 +73,15 @@ if __name__ == '__main__':
 
     etalon, = ax.plot([], [], lw=3, c='g')
     real, = ax.plot([], [], lw=3, c='r')
+    trace, = ax.plot([], [], 'o', lw=1, ms=1, c='r')
+
     ax.scatter(traj[:, 1], traj[:,2], c=traj[:, 0], s=0.8)
-    # trace, = plt.ax.plot([], [], '.-', lw=1, ms=2)
     time_template = 'time = %.1fs'
     time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
 
 
+    trace_x = []
+    trace_y = []
     def animate(i):
 
         et_odom = np.array([et_x[i] , et_y[i], et_theta[i]])
@@ -87,11 +90,14 @@ if __name__ == '__main__':
 
         anim_et_x, anim_et_y = get_arrow(x=et_x[i], y=et_y[i], theta=et_theta[i])
         anim_x, anim_y = get_arrow(x=odom[0], y=odom[1], theta=odom[2])
+        trace_x.append(odom[0])
+        trace_y.append(odom[1])
 
         etalon.set_data(anim_et_x, anim_et_y)
         real.set_data(anim_x, anim_y)
+        trace.set_data(trace_x,trace_y)
         time_text.set_text(time_template % time[i])
-        return etalon, real, time_text
+        return etalon, real, trace, time_text
 
 
     ani = animation.FuncAnimation(
