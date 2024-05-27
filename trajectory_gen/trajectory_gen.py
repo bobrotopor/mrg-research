@@ -137,24 +137,50 @@ if __name__ == '__main__':
     l_types = ['l', 'c', 'l', 'c', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
+    ctrl = tj.control_from_traj(traj)
+    
+    plt.rcParams.update({
+        'font.size': '16',
+        'font.family': 'arial',
+        'font.style': 'italic',
+        'font.weight': 'bold',
+        'axes.titlesize': 'medium',
+        'axes.titleweight': 'bold',
+        'axes.linewidth': '1.1',
+        # 'text.usetex': True,
+        # 'axes.prop_cycle': cycler('color',[...]),
+    })
 
     plt.figure('Траектория')
     plt.title('Траектория')
     plt.scatter(traj[:, 1], traj[:,2], c=traj[:, 0])
+    plt.xlabel('X, [м]')
+    plt.ylabel('Y, [м]')
+    cbar=plt.colorbar()
+    cbar.ax.set_ylabel('Время, [с]')
     plt.grid()
 
-    ctrl = tj.control_from_traj(traj)
 
     plt.figure('theta')
-    plt.title('theta')
+    plt.title('Угол поворота theta')
     plt.plot(traj[:, 0][2:], ctrl[:, 0][2:]*180/np.pi)
+    plt.xlabel('Угол, [рад]')
+    plt.ylabel('Время, [с]')
     plt.grid()
 
-    plt.figure('velocity')
-    plt.title('velocity')
+    plt.figure('Угловая скорость')
+    plt.title('Угловая скорость w')
+    plt.plot(traj[:, 0][2:], ctrl[:, 1][2:])
+    plt.xlabel('Углова скорость, [рад/с]')
+    plt.ylabel('Время, [с]')
+    plt.grid()
+
+    plt.figure('Линейная скорость')
+    plt.title('Линейная скорость v')
     plt.plot(traj[:, 0][2:], ctrl[:, 2][2:])
+    plt.xlabel('Линейная скорость, [м/c]')
+    plt.ylabel('Время, [м/c]')
     plt.grid()
-
 
     plt.show()
 

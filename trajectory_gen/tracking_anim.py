@@ -8,7 +8,10 @@ from trajectory_gen import TrajGenGPR
 from tracking_ctrl import Controller
 
 import matplotlib.animation as animation
+from pathlib import Path
+from matplotlib import rcParams
 
+FFMPEG_EXE_PATH = Path(__file__).parent / 'ffmpeg.exe'
 
 
 def get_arrow(x,y,theta):
@@ -37,8 +40,15 @@ def get_arrow(x,y,theta):
 
 if __name__ == '__main__':
 
-    tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
-    mr_ctrl = Controller(dt=0.01, k=[2,5,1], init_odom=[0.1, 0.2, 0.2], ctrl_type='rot')
+    
+    if not FFMPEG_EXE_PATH.is_file():
+        raise Exception(
+            'Файл ffmpeg.exe отсутствует в папке vector_diagram/ffmpeg !',
+        )
+    rcParams['animation.ffmpeg_path'] = FFMPEG_EXE_PATH
+
+    tj = TrajGenGPR(dt=0.01, scan_vel=0.35)
+    mr_ctrl = Controller(dt=0.01, k=[2,15,2], init_odom=[-1, 1, -1.57], ctrl_type='rot')
 
     points = np.array([[0,0],[0,1],[0.35,1],[0.35,-0.25], [0.6,-0.25], [0.6,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
@@ -54,10 +64,10 @@ if __name__ == '__main__':
     et_vel = ctrl[:,2]
     
 
-    plt.figure('Параметры управления')
-    plt.title('Параметры управления')
-    plt.plot(traj[:, 0], et_theta*180/np.pi)
-    plt.grid()
+    # plt.figure('Параметры управления')
+    # plt.title('Параметры управления')
+    # plt.plot(traj[:, 0], et_theta*180/np.pi)
+    # plt.grid()
 
 
     L = 2
@@ -102,4 +112,8 @@ if __name__ == '__main__':
 
     ani = animation.FuncAnimation(
         fig, animate, len(et_y), interval=time[-1], blit=True)
-    plt.show()
+    # plt.show()
+
+    print('start saving animation')
+    ani.save("trajectory_gen/anim.mp4")
+    print('saved')
