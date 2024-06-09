@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 
 from traj_gen import TrajGenGPR
 from controller import Controller, unpack_vec3
+from logger import Logger
 
 import matplotlib.animation as animation
 from pathlib import Path
@@ -74,11 +75,21 @@ if __name__ == '__main__':
 
     activate_ffmpeg(FFMPEG_EXE_PATH)
 
+    # ========== контроллер модели МР ==========
+    mr_ctrl = Controller(
+        dt=0.01, 
+        k=[2,10,5], 
+        init_odom=[0, 0, 0.57], 
+        ctrl_type='rot',
+        max_v=0.7,
+        max_w=2.44,
+        sat_type='global',
+    )
+
     # ========== генерация траектории =============
     tj = TrajGenGPR(dt=0.01, scan_vel=0.35)
-    mr_ctrl = Controller(dt=0.01, k=[2,15,2], init_odom=[-1, 1, -1.57], ctrl_type='rot')
 
-    points = np.array([[0,0],[0,1],[0.35,1],[0.35,-0.25], [0.6,-0.25], [0.6,1.25]])
+    points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
     gpr_flags = [1,0,1,1,1,1,1]
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
@@ -116,9 +127,14 @@ if __name__ == '__main__':
     # TODO: исправить этот косяк, если отсанется время
     trace_x = []
     trace_y = []
+    ctrl_logger = Logger()
+
     def animate(i):
         """Анимация."""
-        odom = mr_ctrl.tick(et_odom[i], et_ctrl[i])
+        odom, vel, omega = mr_ctrl.tick(et_odom[i], et_ctrl[i])
+        ctrl_logger.log('vel', vel)
+        ctrl_logger.log('omega', omega)
+        ctrl_logger.log('time', time[i])
 
         anim_et_x, anim_et_y = get_arrow(et_odom[i])
         anim_x, anim_y = get_arrow(odom)
@@ -132,3 +148,18 @@ if __name__ == '__main__':
         return etalon, real, trace, time_text
 
     start_anim(fig, animate, frames_num=n, time_interval=time[-1])
+
+    ctrl_fig = plt.figure('Управляющие сигналы МР')
+    gs = ctrl_fig.add_gridspec(2, 1, figure=ctrl_fig)
+    vel = ctrl_fig.add_subplot(gs[0, 0])
+    omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
+
+    vel.set_ylabel('Линейная скорость, [м/с]')
+    vel.plot(ctrl_logger['time'], ctrl_logger['vel'])
+    vel.grid()
+
+    omega.set_ylabel('Угловая скорость, [рад/с]')
+    omega.set_xlabel('Время, [с]')
+    omega.plot(ctrl_logger['time'], ctrl_logger['omega'])
+    omega.grid()
+    plt.show()

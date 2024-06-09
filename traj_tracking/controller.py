@@ -13,14 +13,28 @@ def unpack_vec3(odom: NDArray) -> [float, float, float]:
 
 class Controller():
 
-    def __init__(self, dt: float, k: list, init_odom: list, ctrl_type: str ='approx') -> None:
+    def __init__(
+        self, 
+        dt: float, 
+        k: list, 
+        init_odom: list, 
+        max_v: float,
+        max_w: float,
+        ctrl_type: str ='approx', 
+        sat_type: str = None,
+    ) -> None:
         
         self.k1 = k[0]
         self.k2 = k[1]
         self.k3 = k[2]
+
         self.dt = dt
+        self.max_v = max_v
+        self.max_w = max_w
+
         self.ctrl_type = ctrl_type
         self.odom =np.array(init_odom)
+        self.sat_type = sat_type
 
         if ctrl_type != 'approx' and ctrl_type !='rot':
             raise Exception('Ошибка имени контроллера!')
@@ -73,11 +87,23 @@ class Controller():
         if self.ctrl_type == 'rot':
             err = self.calc_rot_method_err(et_odom)
             vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
+        if self.sat_type == 'global':
+            vel = self.sat(val=vel, val_max=self.max_v)
+            omega = self.sat(val=omega, val_max=self.max_w)
 
+        # эволюция местоположения модели МР
         x,y,theta = unpack_vec3(self.odom)
         self.odom[0] = vel*cos(theta)*self.dt + x
         self.odom[1] = vel*sin(theta)*self.dt + y
         self.odom[2] = omega*self.dt + theta
 
-        return self.odom
+        return self.odom, vel, omega
     
+    def sat(self, val: float, val_max: float):
+        """Функция лийнейного насыщения."""
+        sign = np.sign(val)
+        if abs(val) > val_max: 
+            return val_max * sign 
+        else:
+            return val
+
