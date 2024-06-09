@@ -21,12 +21,11 @@ class TrajGenGPR(object):
         self.control = None
 
 
-    def gen_gpr_scanning_traj(self, points: NDArray, line_types: list, gpr_flags: list):
+    def gen_gpr_scanning_traj(self, points: NDArray, line_types: list):
         """Сгенерировать всю траекторию движения МР, с метками времени и флажками включения георадара."""
         is_first_iter = True
         scan_traj = np.empty((0,3)) # time/x/y/gpr_flags
         line_types = ['pass'] + line_types
-        gpr_flags = [0] + gpr_flags
         
         for idx in range(1, np.shape(points)[0]):
             p_start = points[idx - 1]
@@ -42,10 +41,6 @@ class TrajGenGPR(object):
             if line_types[idx] == 'c':
                 section_points = self.gen_circ_arc(prev_p1=scan_traj[-1][1:], p1=p_start, p2=p_end, init_time=scan_traj[-1][0])
 
-            # n = section_points.shape[0]
-            # g_flags = gpr_flags[idx] + np.zeros((n,1))
-            # part_traj = np.hstack((section_points, g_flags))
-            # scan_traj = np.vstack((scan_traj, part_traj))
             scan_traj = np.vstack((scan_traj, section_points))
 
         self.traj = scan_traj
@@ -136,8 +131,7 @@ if __name__ == '__main__':
 
     points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
-    gpr_flags = [1,0,1,1,1,1,1]
-    traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
+    traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types)
     ctrl = tj.control_from_traj(traj)
     
     plt.rcParams.update({

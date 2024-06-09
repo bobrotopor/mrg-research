@@ -91,14 +91,14 @@ if __name__ == '__main__':
 
     points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
-    gpr_flags = [1,0,1,1,1,1,1]
-    traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types, gpr_flags=gpr_flags)
-    ctrl = tj.control_from_traj(traj)
+
+    traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types)
+    et_ctrl_ = tj.control_from_traj(traj)
 
     time = traj[:,0]
     n = traj.shape[0]
-    et_odom = np.hstack((traj[:,1].reshape((n,1)), traj[:,2].reshape((n,1)), ctrl[:,0].reshape((n,1))))
-    et_ctrl = np.hstack((ctrl[:,2].reshape((n,1)), ctrl[:,1].reshape((n,1))))
+    et_odom = np.hstack((traj[:,1].reshape((n,1)), traj[:,2].reshape((n,1)), et_ctrl_[:,0].reshape((n,1))))
+    et_ctrl = np.hstack((et_ctrl_[:,2].reshape((n,1)), et_ctrl_[:,1].reshape((n,1))))
 
     # ========== настройка окна анимации =============
     width = 2
