@@ -13,7 +13,7 @@ def unpack_vec3(odom: NDArray) -> [float, float, float]:
 
 class Controller():
 
-    def __init__(self, dt, k: list, init_odom: list, ctrl_type: str ='approx') -> None:
+    def __init__(self, dt: float, k: list, init_odom: list, ctrl_type: str ='approx') -> None:
         
         self.k1 = k[0]
         self.k2 = k[1]
@@ -27,10 +27,12 @@ class Controller():
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
+        """Вычислить вектор ошибок православным методом - влоб."""
         err = self.odom - et_odom
         return err
     
     def calc_rot_method_err(self, et_odom: NDArray) -> NDArray:
+        """Вычислить вектор ошибок для метода матрицы поворота."""
         et_x,et_y,et_theta = unpack_vec3(et_odom)
         x,y,theta = unpack_vec3(self.odom)
 
@@ -60,7 +62,7 @@ class Controller():
         return vel, omega
 
     def tick(self, et_odom: NDArray, et_ctrl: NDArray):
-        
+        """Один шаг управления."""
         et_theta = et_odom[2]
         et_vel = et_ctrl[0] 
         et_omega = et_ctrl[1]

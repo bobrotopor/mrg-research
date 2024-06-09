@@ -1,4 +1,4 @@
-
+"""Генератор траектории."""
 
 import numpy as np
 from numpy.typing import NDArray
@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 
 class TrajGenGPR(object):
-
+    """Генератор траектории."""
 
     def __init__(self, dt: float,  scan_vel: float, turning_vel: float = None) -> None:
         
@@ -72,11 +72,11 @@ class TrajGenGPR(object):
     
 
     def gen_circ_arc(self, prev_p1: NDArray, p1: NDArray, p2: NDArray, init_time: float) -> NDArray:
-        
+        """Сгенерировать дугу сегментом pi на плоскости между двумя опорными точками."""
 
         diam = np.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
         to_center_vec = np.array([p2[0] - p1[0], p2[1] - p1[1]])
-        to_center_vec *= 1 / diam
+        to_center_vec *= 1 / diam   # векктор направленный в центр дуги
         radius = diam/2
         center = radius * to_center_vec + p1
 
@@ -101,7 +101,7 @@ class TrajGenGPR(object):
         return np.hstack((t_arr, x_arr, y_arr))
 
     def control_from_traj(self, traj: NDArray):
-        
+        """Получить управление по скорости из параметров траектории."""
         theta = [0, 0]  
         omega = [0, 0]
         vel = [0, 0]
@@ -125,6 +125,7 @@ class TrajGenGPR(object):
     
     
     def etalon_from_latest_calcs(self):
+        """Вернуть одометрию и скорости одной матрицей на основе предыдущего расчёта траектории."""
         ctrl = self.control_from_traj(self.traj)
         return np.hstack((self.traj, ctrl))
     
