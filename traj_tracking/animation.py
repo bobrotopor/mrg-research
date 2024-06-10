@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 
 from traj_gen import TrajGenGPR
-from controller import Controller, unpack_vec3
+from controller import Controller, unpack_vec3, VelocityModelMR
 from logger import Logger
 
 import matplotlib.animation as animation
@@ -84,6 +84,8 @@ if __name__ == '__main__':
         max_v=0.7,
         max_w=2.44,
         sat_type='global',
+        vel_mdoel=VelocityModelMR(0.1, [0,0,0], 0.4,0.6,2.44),
+        scan_v=0.4
     )
 
     # ========== генерация траектории =============

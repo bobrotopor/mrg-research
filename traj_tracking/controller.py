@@ -11,6 +11,32 @@ def unpack_vec3(odom: NDArray) -> [float, float, float]:
     z = odom[2]
     return x,y,z
 
+
+class VelocityModelMR():
+    """Скоростная модель мобильного робота."""
+    def __init__(
+        self, 
+        dt: float, 
+        init_odom: list[float, float, float], 
+        scan_v: float, 
+        max_v: float, 
+        max_w: float,
+    ):
+        self.odom = np.array(init_odom)
+        self.dt = dt
+        self.scan_v = scan_v
+        self.max_v = max_v 
+        self.max_w = max_w 
+
+
+    def odom_tick(self, cmd_vel, cmd_omega):
+        theta = self.odom[2]
+        self.odom[0] += cmd_vel*cos(theta)*self.dt
+        self.odom[1] += cmd_vel*sin(theta)*self.dt
+        self.odom[2] += cmd_omega*self.dt
+        return self.odom
+    
+        
 class Controller():
 
     def __init__(
@@ -18,8 +44,10 @@ class Controller():
         dt: float, 
         k: list, 
         init_odom: list, 
+        scan_v: float,
         max_v: float,
         max_w: float,
+        vel_mdoel: VelocityModelMR,
         ctrl_type: str ='approx', 
         sat_type: str = None,
     ) -> None:
@@ -31,6 +59,7 @@ class Controller():
         self.dt = dt
         self.max_v = max_v
         self.max_w = max_w
+        self.scan_v = scan_v
 
         self.ctrl_type = ctrl_type
         self.odom =np.array(init_odom)
@@ -38,6 +67,8 @@ class Controller():
 
         if ctrl_type != 'approx' and ctrl_type !='rot':
             raise Exception('Ошибка имени контроллера!')
+        
+        self.mr_model = vel_mdoel
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
