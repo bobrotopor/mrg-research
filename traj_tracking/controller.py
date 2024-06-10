@@ -29,7 +29,7 @@ class VelocityModelMR():
         self.max_w = max_w 
 
 
-    def odom_tick(self, cmd_vel, cmd_omega):
+    def tick(self, cmd_vel, cmd_omega):
         theta = self.odom[2]
         self.odom[0] += cmd_vel*cos(theta)*self.dt
         self.odom[1] += cmd_vel*sin(theta)*self.dt
@@ -41,13 +41,8 @@ class Controller():
 
     def __init__(
         self, 
-        dt: float, 
+        mr_model: VelocityModelMR,
         k: list, 
-        init_odom: list, 
-        scan_v: float,
-        max_v: float,
-        max_w: float,
-        vel_mdoel: VelocityModelMR,
         ctrl_type: str ='approx', 
         sat_type: str = None,
     ) -> None:
@@ -56,30 +51,24 @@ class Controller():
         self.k2 = k[1]
         self.k3 = k[2]
 
-        self.dt = dt
-        self.max_v = max_v
-        self.max_w = max_w
-        self.scan_v = scan_v
-
         self.ctrl_type = ctrl_type
-        self.odom =np.array(init_odom)
         self.sat_type = sat_type
 
         if ctrl_type != 'approx' and ctrl_type !='rot':
             raise Exception('Ошибка имени контроллера!')
         
-        self.mr_model = vel_mdoel
+        self.mr_model = mr_model
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
         """Вычислить вектор ошибок православным методом - влоб."""
-        err = self.odom - et_odom
+        err = self.mr_model.odom - et_odom
         return err
     
     def calc_rot_method_err(self, et_odom: NDArray) -> NDArray:
         """Вычислить вектор ошибок для метода матрицы поворота."""
         et_x,et_y,et_theta = unpack_vec3(et_odom)
-        x,y,theta = unpack_vec3(self.odom)
+        x,y,theta = unpack_vec3(self.mr_model.odom)
 
         err = np.zeros(3)
         err[0] =  cos(theta)*(et_x - x) + sin(theta)*(et_y - y)
@@ -119,16 +108,13 @@ class Controller():
             err = self.calc_rot_method_err(et_odom)
             vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
         if self.sat_type == 'global':
-            vel = self.sat(val=vel, val_max=self.max_v)
-            omega = self.sat(val=omega, val_max=self.max_w)
+            vel = self.sat(val=vel, val_max=self.mr_model.max_v)
+            omega = self.sat(val=omega, val_max=self.mr_model.max_w)
 
         # эволюция местоположения модели МР
-        x,y,theta = unpack_vec3(self.odom)
-        self.odom[0] = vel*cos(theta)*self.dt + x
-        self.odom[1] = vel*sin(theta)*self.dt + y
-        self.odom[2] = omega*self.dt + theta
+        self.mr_model.tick(cmd_vel=vel, cmd_omega=omega)
 
-        return self.odom, vel, omega
+        return self.mr_model.odom, vel, omega
     
     def sat(self, val: float, val_max: float):
         """Функция лийнейного насыщения."""
@@ -137,4 +123,3 @@ class Controller():
             return val_max * sign 
         else:
             return val
-

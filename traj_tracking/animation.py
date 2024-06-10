@@ -75,17 +75,19 @@ if __name__ == '__main__':
 
     activate_ffmpeg(FFMPEG_EXE_PATH)
 
-    # ========== контроллер модели МР ==========
-    mr_ctrl = Controller(
-        dt=0.01, 
-        k=[2,10,5], 
-        init_odom=[0, 0, 0.57], 
-        ctrl_type='rot',
+    # ========== модель МР и контроллер ==========
+    mr_model = VelocityModelMR(
+        dt=0.01,
+        init_odom=[0, 0, 0.57],
+        scan_v=0.4,
         max_v=0.7,
         max_w=2.44,
+    )
+    mr_ctrl = Controller(
+        k=[2,10,5], 
+        ctrl_type='rot',
         sat_type='global',
-        vel_mdoel=VelocityModelMR(0.1, [0,0,0], 0.4,0.6,2.44),
-        scan_v=0.4
+        mr_model=mr_model,
     )
 
     # ========== генерация траектории =============
