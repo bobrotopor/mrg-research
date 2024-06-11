@@ -1,3 +1,4 @@
+"""Трекер данных."""
 
 import numpy as np
 

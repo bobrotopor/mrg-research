@@ -1,4 +1,4 @@
-
+"""Функция моделирования управления МР."""
 
 import numpy as np
 from traj_gen import TrajGenGPR
@@ -24,9 +24,7 @@ def run_modelling(points, line_types, ctrl: Controller, lgr: Logger):
         lgr.log('omega', omega)
         lgr.log('odom', odom)
 
-        lgr.log('time', time[idx])
-
-    # lgr.data_dict['time'] = np.reshape(time, (1,n))
+    lgr.data_dict['time'] = time
     lgr.data_dict['et_odom'] = et_odom
     lgr.data_dict['et_ctrl'] = et_ctrl
 

@@ -8,11 +8,10 @@ from matplotlib import pyplot as plt
 class TrajGenGPR(object):
     """Генератор траектории."""
 
-    def __init__(self, dt: float,  vel: float, accel: float=None) -> None:
+    def __init__(self, dt: float,  vel: float) -> None:
         
         self.dt = dt
         self.vel = vel
-        self.accel = accel
 
         self.traj = None
         self.control = None
