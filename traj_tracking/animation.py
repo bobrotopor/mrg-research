@@ -57,7 +57,7 @@ def keyboard_handler(fig, anim_fun, frames_num, time_interval, lgr: Logger):
             ani = animation.FuncAnimation(
                 fig, anim_fun, frames_num, interval=time_interval, blit=True)
             print('start saving animation')
-            ani.save("trajectory_gen/anim.mp4")
+            ani.save("traj_tracking/anim.mp4")
             print('saved')
         case 'p': 
             ani = animation.FuncAnimation(
@@ -170,9 +170,3 @@ if __name__ == '__main__':
         return etalon, real, trace, time_text
 
     keyboard_handler(fig, animate, frames_num=num_steps, time_interval=anim_time, lgr=lgr)
-
-    ani = animation.FuncAnimation(
-        fig, animate, num_steps, interval=anim_time, blit=True)
-    print('start saving animation')
-    ani.save("traj_tracking/anim.mp4")
-    print('saved')
