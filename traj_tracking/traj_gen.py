@@ -8,14 +8,11 @@ from matplotlib import pyplot as plt
 class TrajGenGPR(object):
     """Генератор траектории."""
 
-    def __init__(self, dt: float,  scan_vel: float, turning_vel: float = None) -> None:
+    def __init__(self, dt: float,  vel: float, accel: float=None) -> None:
         
         self.dt = dt
-        self.scan_vel = scan_vel
-        if turning_vel is None:
-            self.turning_vel = scan_vel
-        else:
-            self.turning_vel = turning_vel
+        self.vel = vel
+        self.accel = accel
 
         self.traj = None
         self.control = None
@@ -50,7 +47,7 @@ class TrajGenGPR(object):
 
     def gen_line(self, p1: NDArray, p2: NDArray, init_time: float) -> NDArray:
         """Сгенерировать отрезок прямой на плоскости между двумя опорными точками."""
-        step =  self.scan_vel * self.dt
+        step =  self.vel * self.dt
         len_line = np.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2) 
         dir_vec = np.array([p2[0] - p1[0], p2[1] - p1[1]])
         dir_vec *= 1 / len_line
@@ -79,7 +76,7 @@ class TrajGenGPR(object):
         prev_vec3 = np.array([p1[0] - prev_p1[0], p1[1] - prev_p1[1], 0])
         arc_build_dir = np.sign(np.cross(prev_vec3,to_center_vec3)[2]) 
 
-        step =  self.scan_vel * self.dt
+        step =  self.vel * self.dt
         ang_step = step/radius
         rot_ang = np.arctan2(-to_center_vec[1], -to_center_vec[0])
         
@@ -127,7 +124,7 @@ class TrajGenGPR(object):
 
 
 if __name__ == '__main__':
-    tj = TrajGenGPR(dt=0.01, scan_vel=0.5)
+    tj = TrajGenGPR(dt=0.01, vel=0.5)
 
     points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']

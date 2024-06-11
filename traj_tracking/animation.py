@@ -44,11 +44,14 @@ def get_arrow(odom: NDArray):
     return x_arrow, y_arrow
 
 
-def start_anim(fig, anim_fun, frames_num, time_interval):
-    """Запуск анимации или сохранение в mp4."""
-    key = input('"s" - сохранить анимацию в mp4;\n'
-                '"p" - запустить анимацию в окне pyplot;\n'
-                '"любая другая клавиша" - выйти из программы\n')
+def keyboard_handler(fig, anim_fun, frames_num, time_interval, lgr: Logger):
+    """Выполнить инструкцию в соотвертствии с нажатой клавишей."""
+    commands = '"s" - сохранить анимацию в mp4;\n' \
+                '"p" - запустить анимацию в окне pyplot;\n' \
+                '"g" - вывести все графики моделирования;\n' \
+                '"другие клавиши" - выйти из программы.\n'
+    
+    key = input(commands)
     match key:
         case 's':
             ani = animation.FuncAnimation(
@@ -60,6 +63,9 @@ def start_anim(fig, anim_fun, frames_num, time_interval):
             ani = animation.FuncAnimation(
                 fig, anim_fun, frames_num, interval=time_interval, blit=True)
             plt.show()
+        case 'g':
+            plot_ctrl_mr(lgr)
+            plt.show()
         case _:
             return
     
@@ -69,6 +75,22 @@ def activate_ffmpeg(ffmpeg_path):
             f'Файл ffmpeg.exe отсутствует по пути {ffmpeg_path} !',
         )
     rcParams['animation.ffmpeg_path'] = ffmpeg_path
+
+def plot_ctrl_mr(lgr: Logger):
+    ctrl_fig = plt.figure('Управляющие сигналы МР')
+    ctrl_fig.suptitle('Управляющие сигналы МР')
+    gs = ctrl_fig.add_gridspec(2, 1, figure=ctrl_fig)
+    vel = ctrl_fig.add_subplot(gs[0, 0])
+    omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
+
+    vel.set_ylabel('Линейная скорость, \n[м/с]')
+    vel.plot(lgr['time'], lgr['vel'])
+    vel.grid()
+
+    omega.set_ylabel('Угловая скорость, \n[рад/с]')
+    omega.set_xlabel('Время, [с]')
+    omega.plot(lgr['time'], lgr['omega'])
+    omega.grid()
 
 
 if __name__ == '__main__':
@@ -143,20 +165,4 @@ if __name__ == '__main__':
         time_text.set_text(time_template % lgr['time'][i])
         return etalon, real, trace, time_text
 
-    start_anim(fig, animate, frames_num=num_steps, time_interval=time)
-
-    ctrl_fig = plt.figure('Управляющие сигналы МР')
-    plt.title('Управляющие сигналы МР')
-    gs = ctrl_fig.add_gridspec(2, 1, figure=ctrl_fig)
-    vel = ctrl_fig.add_subplot(gs[0, 0])
-    omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
-
-    vel.set_ylabel('Линейная скорость, [м/с]')
-    vel.plot(lgr['time'], lgr['vel'])
-    vel.grid()
-
-    omega.set_ylabel('Угловая скорость, [рад/с]')
-    omega.set_xlabel('Время, [с]')
-    omega.plot(lgr['time'], lgr['omega'])
-    omega.grid()
-    plt.show()
+    keyboard_handler(fig, animate, frames_num=num_steps, time_interval=time, lgr=lgr)

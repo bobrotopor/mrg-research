@@ -8,7 +8,7 @@ from logger import Logger
 
 def run_modelling(points, line_types, ctrl: Controller, lgr: Logger):
 
-    tj = TrajGenGPR(dt=ctrl.mr_model.dt, scan_vel=ctrl.mr_model.scan_v)
+    tj = TrajGenGPR(dt=ctrl.mr_model.dt, vel=ctrl.mr_model.scan_v)
     traj = tj.gen_gpr_scanning_traj(points=points, line_types=line_types)
     et_ctrl_ = tj.control_from_traj(traj)   # TODO: убрать костыль ! Отсюда вылазят скорости и угол поворота
 
@@ -24,9 +24,9 @@ def run_modelling(points, line_types, ctrl: Controller, lgr: Logger):
         lgr.log('omega', omega)
         lgr.log('odom', odom)
 
-        # lgr.log('time', time[idx])
+        lgr.log('time', time[idx])
 
-    lgr.data_dict['time'] = time
+    # lgr.data_dict['time'] = np.reshape(time, (1,n))
     lgr.data_dict['et_odom'] = et_odom
     lgr.data_dict['et_ctrl'] = et_ctrl
 

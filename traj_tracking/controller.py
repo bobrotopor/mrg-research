@@ -18,9 +18,11 @@ class VelocityModelMR():
         self, 
         dt: float, 
         init_odom: list[float, float, float], 
-        scan_v: float, 
+        scan_v: float,
         max_v: float, 
         max_w: float,
+        max_dvdt: float=None,
+        max_dwdt: float=None,
     ):
         self.odom = np.array(init_odom)
         self.dt = dt
