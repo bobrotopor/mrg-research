@@ -3,9 +3,10 @@ import numpy as np
 
 class Logger(object):
 
-    def __init__(self) -> None:
+    def __init__(self, console_print: bool = False) -> None:
         self.data_dict = {}
         self.data_shapes = {}
+        self.console_print = console_print
 
     def __getitem__(self,key):
         return self.data_dict[key]
@@ -13,7 +14,8 @@ class Logger(object):
     def log(self, key, data):
         
         if (key in self.data_dict.keys()) is False:
-            print(f'Logger added: {key}')
+            if self.console_print: 
+                print(f'Logger added: {key}')
             self.data_dict[key] = data
             self.data_shapes[key] = np.shape(data)
         else:
