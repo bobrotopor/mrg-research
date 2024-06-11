@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from controller import Controller, unpack_vec3, VelocityModelMR
 from logger import Logger
 from modelling import run_modelling
+import plotter as tr_plt
 
 import matplotlib.animation as animation
 from pathlib import Path
@@ -64,7 +65,7 @@ def keyboard_handler(fig, anim_fun, frames_num, time_interval, lgr: Logger):
                 fig, anim_fun, frames_num, interval=time_interval, blit=True)
             plt.show()
         case 'g':
-            plot_ctrl_mr(lgr)
+            tr_plt.plot_ctrl_mr(lgr)
             plt.show()
         case _:
             return
@@ -75,22 +76,6 @@ def activate_ffmpeg(ffmpeg_path):
             f'Файл ffmpeg.exe отсутствует по пути {ffmpeg_path} !',
         )
     rcParams['animation.ffmpeg_path'] = ffmpeg_path
-
-def plot_ctrl_mr(lgr: Logger):
-    ctrl_fig = plt.figure('Управляющие сигналы МР')
-    ctrl_fig.suptitle('Управляющие сигналы МР')
-    gs = ctrl_fig.add_gridspec(2, 1, figure=ctrl_fig)
-    vel = ctrl_fig.add_subplot(gs[0, 0])
-    omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
-
-    vel.set_ylabel('Линейная скорость, \n[м/с]')
-    vel.plot(lgr['time'], lgr['vel'])
-    vel.grid()
-
-    omega.set_ylabel('Угловая скорость, \n[рад/с]')
-    omega.set_xlabel('Время, [с]')
-    omega.plot(lgr['time'], lgr['omega'])
-    omega.grid()
 
 
 if __name__ == '__main__':
