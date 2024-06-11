@@ -12,6 +12,39 @@ def unpack_vec3(odom: NDArray) -> [float, float, float]:
     return x,y,z
 
 
+def linear_sat(val, val_max):
+    """Функция лийнейного насыщения."""
+    sign = np.sign(val)
+    if abs(val) > val_max: 
+        return val_max * sign 
+    else:
+        return val
+
+
+class Saturator():
+
+    def __init__(self, dt, max_v, max_w, max_dvdt, max_dwdt):
+        self.dt = dt
+        self.max_vels = np.array([max_v, max_w])
+        self.max_accels = np.array([max_dvdt, max_dwdt])
+        self.sat_cmd = np.zeros(2)
+
+    def lsat(self, cmd):
+        sat_cmd = np.zeros(2)
+        for idx, max_cmd in enumerate(self.max_vels):
+            sat_cmd[idx] = linear_sat(cmd[idx], max_cmd)
+        return sat_cmd
+
+    def accel_lim(self, cmd):
+        for idx, max_a in enumerate(self.max_accels):
+            dcmd = cmd[idx] - self.sat_cmd[idx]
+            if abs(dcmd) / self.dt > max_a:
+                self.sat_cmd[idx] += self.dt * max_a * np.sign(dcmd)
+            else:
+                self.sat_cmd[idx] = cmd[idx]
+        return self.sat_cmd
+
+
 class VelocityModelMR():
     """Скоростная модель мобильного робота."""
     def __init__(
@@ -21,14 +54,16 @@ class VelocityModelMR():
         scan_v: float,
         max_v: float, 
         max_w: float,
-        max_dvdt: float=None,
-        max_dwdt: float=None,
+        max_dvdt: float,
+        max_dwdt: float,
     ):
         self.odom = np.array(init_odom)
         self.dt = dt
         self.scan_v = scan_v
         self.max_v = max_v 
         self.max_w = max_w 
+        self.max_dvdt = max_dvdt
+        self.max_dwdt = max_dwdt
 
 
     def tick(self, cmd_vel, cmd_omega):
@@ -60,6 +95,14 @@ class Controller():
             raise Exception('Ошибка имени контроллера!')
         
         self.mr_model = mr_model
+        self.sat = Saturator(
+            dt=self.mr_model.dt, 
+            max_v=self.mr_model.max_v,
+            max_w=self.mr_model.max_w,
+            max_dvdt=self.mr_model.max_dvdt, 
+            max_dwdt=self.mr_model.max_dwdt,
+        )
+
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
@@ -110,18 +153,13 @@ class Controller():
             err = self.calc_rot_method_err(et_odom)
             vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
         if self.sat_type == 'global':
-            vel = self.sat(val=vel, val_max=self.mr_model.max_v)
-            omega = self.sat(val=omega, val_max=self.mr_model.max_w)
+            sat_cmd = self.sat.lsat(np.array([vel, omega]))
+            cmd = self.sat.accel_lim(sat_cmd)
+            vel = cmd[0]
+            omega = cmd[1]
 
         # эволюция местоположения модели МР
         self.mr_model.tick(cmd_vel=vel, cmd_omega=omega)
 
         return self.mr_model.odom, vel, omega
     
-    def sat(self, val: float, val_max: float):
-        """Функция лийнейного насыщения."""
-        sign = np.sign(val)
-        if abs(val) > val_max: 
-            return val_max * sign 
-        else:
-            return val

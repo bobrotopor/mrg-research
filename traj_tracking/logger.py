@@ -23,6 +23,3 @@ class Logger(object):
                     f'Need: {self.data_dict[key][0].shape}, exepted: {np.shape(data)}'    
                 )
             self.data_dict[key] = np.vstack((self.data_dict[key], data))
-            
-
-    

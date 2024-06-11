@@ -104,6 +104,8 @@ if __name__ == '__main__':
         scan_v=0.4,
         max_v=0.7,
         max_w=2.44,
+        max_dvdt=0.5,
+        max_dwdt=5.5,
     )
     mr_ctrl = Controller(
         k=[2,10,5], 
@@ -118,7 +120,7 @@ if __name__ == '__main__':
 
     # ========== запуск моделирования =============
     lgr = Logger()
-    num_steps, time = run_modelling(points=points, line_types=l_types, ctrl=mr_ctrl, lgr=lgr)
+    num_steps, anim_time = run_modelling(points=points, line_types=l_types, ctrl=mr_ctrl, lgr=lgr)
 
     # ========== настройка окна анимации =============
     plt.rcParams.update({
@@ -139,6 +141,8 @@ if __name__ == '__main__':
         xlim=(-width + shift_x, width + shift_x), ylim=(-width + shift_y, width + shift_y),
     )
     ax.set_aspect('equal')
+    ax.set_xlabel('X, [м]')
+    ax.set_ylabel('Y, [м]')
     ax.grid()
 
     etalon, = ax.plot([], [], lw=3, c='g')
@@ -165,4 +169,10 @@ if __name__ == '__main__':
         time_text.set_text(time_template % lgr['time'][i])
         return etalon, real, trace, time_text
 
-    keyboard_handler(fig, animate, frames_num=num_steps, time_interval=time, lgr=lgr)
+    keyboard_handler(fig, animate, frames_num=num_steps, time_interval=anim_time, lgr=lgr)
+
+    ani = animation.FuncAnimation(
+        fig, animate, num_steps, interval=anim_time, blit=True)
+    print('start saving animation')
+    ani.save("traj_tracking/anim.mp4")
+    print('saved')
