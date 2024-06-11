@@ -11,30 +11,109 @@ def unpack_vec3(odom: NDArray) -> [float, float, float]:
     z = odom[2]
     return x,y,z
 
+
+def linear_sat(val, val_max):
+    """Функция лийнейного насыщения."""
+    sign = np.sign(val)
+    if abs(val) > val_max: 
+        return val_max * sign 
+    else:
+        return val
+
+
+class Saturator():
+
+    def __init__(self, dt, max_v, max_w, max_dvdt, max_dwdt):
+        self.dt = dt
+        self.max_vels = np.array([max_v, max_w])
+        self.max_accels = np.array([max_dvdt, max_dwdt])
+        self.sat_cmd = np.zeros(2)
+
+    def lsat(self, cmd):
+        sat_cmd = np.zeros(2)
+        for idx, max_cmd in enumerate(self.max_vels):
+            sat_cmd[idx] = linear_sat(cmd[idx], max_cmd)
+        return sat_cmd
+
+    def accel_lim(self, cmd):
+        for idx, max_a in enumerate(self.max_accels):
+            dcmd = cmd[idx] - self.sat_cmd[idx]
+            if abs(dcmd) / self.dt > max_a:
+                self.sat_cmd[idx] += self.dt * max_a * np.sign(dcmd)
+            else:
+                self.sat_cmd[idx] = cmd[idx]
+        return self.sat_cmd
+
+
+class VelocityModelMR():
+    """Скоростная модель мобильного робота."""
+    def __init__(
+        self, 
+        dt: float, 
+        init_odom: list[float, float, float], 
+        scan_v: float,
+        max_v: float, 
+        max_w: float,
+        max_dvdt: float,
+        max_dwdt: float,
+    ):
+        self.odom = np.array(init_odom)
+        self.dt = dt
+        self.scan_v = scan_v
+        self.max_v = max_v 
+        self.max_w = max_w 
+        self.max_dvdt = max_dvdt
+        self.max_dwdt = max_dwdt
+
+
+    def tick(self, cmd_vel, cmd_omega):
+        theta = self.odom[2]
+        self.odom[0] += cmd_vel*cos(theta)*self.dt
+        self.odom[1] += cmd_vel*sin(theta)*self.dt
+        self.odom[2] += cmd_omega*self.dt
+        return self.odom
+    
+        
 class Controller():
 
-    def __init__(self, dt: float, k: list, init_odom: list, ctrl_type: str ='approx') -> None:
+    def __init__(
+        self, 
+        mr_model: VelocityModelMR,
+        k: list, 
+        ctrl_type: str ='approx', 
+        sat_type: str = None,
+    ) -> None:
         
         self.k1 = k[0]
         self.k2 = k[1]
         self.k3 = k[2]
-        self.dt = dt
+
         self.ctrl_type = ctrl_type
-        self.odom =np.array(init_odom)
+        self.sat_type = sat_type
 
         if ctrl_type != 'approx' and ctrl_type !='rot':
             raise Exception('Ошибка имени контроллера!')
+        
+        self.mr_model = mr_model
+        self.sat = Saturator(
+            dt=self.mr_model.dt, 
+            max_v=self.mr_model.max_v,
+            max_w=self.mr_model.max_w,
+            max_dvdt=self.mr_model.max_dvdt, 
+            max_dwdt=self.mr_model.max_dwdt,
+        )
+
 
 
     def calc_err(self, et_odom: NDArray) -> NDArray:
         """Вычислить вектор ошибок православным методом - влоб."""
-        err = self.odom - et_odom
+        err = self.mr_model.odom - et_odom
         return err
     
     def calc_rot_method_err(self, et_odom: NDArray) -> NDArray:
         """Вычислить вектор ошибок для метода матрицы поворота."""
         et_x,et_y,et_theta = unpack_vec3(et_odom)
-        x,y,theta = unpack_vec3(self.odom)
+        x,y,theta = unpack_vec3(self.mr_model.odom)
 
         err = np.zeros(3)
         err[0] =  cos(theta)*(et_x - x) + sin(theta)*(et_y - y)
@@ -73,11 +152,14 @@ class Controller():
         if self.ctrl_type == 'rot':
             err = self.calc_rot_method_err(et_odom)
             vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
+        if self.sat_type == 'global':
+            sat_cmd = self.sat.lsat(np.array([vel, omega]))
+            cmd = self.sat.accel_lim(sat_cmd)
+            vel = cmd[0]
+            omega = cmd[1]
 
-        x,y,theta = unpack_vec3(self.odom)
-        self.odom[0] = vel*cos(theta)*self.dt + x
-        self.odom[1] = vel*sin(theta)*self.dt + y
-        self.odom[2] = omega*self.dt + theta
+        # эволюция местоположения модели МР
+        self.mr_model.tick(cmd_vel=vel, cmd_omega=omega)
 
-        return self.odom
+        return self.mr_model.odom, vel, omega
     
