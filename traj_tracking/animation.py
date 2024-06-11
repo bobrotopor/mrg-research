@@ -44,7 +44,6 @@ def get_arrow(odom: NDArray):
     ]
     return x_arrow, y_arrow
 
-
 def keyboard_handler(fig, anim_fun, frames_num, time_interval, lgr: Logger):
     """Выполнить инструкцию в соотвертствии с нажатой клавишей."""
     commands = '"s" - сохранить анимацию в mp4;\n' \
@@ -92,6 +91,7 @@ if __name__ == '__main__':
         max_dvdt=0.5,
         max_dwdt=5.5,
     )
+    
     mr_ctrl = Controller(
         k=[2,10,5], 
         ctrl_type='rot',
