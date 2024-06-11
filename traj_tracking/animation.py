@@ -4,9 +4,9 @@ import numpy as np
 from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 
-from traj_gen import TrajGenGPR
 from controller import Controller, unpack_vec3, VelocityModelMR
 from logger import Logger
+from modelling import run_modelling
 
 import matplotlib.animation as animation
 from pathlib import Path
@@ -90,21 +90,24 @@ if __name__ == '__main__':
         mr_model=mr_model,
     )
 
-    # ========== генерация траектории =============
-    tj = TrajGenGPR(dt=0.01, scan_vel=0.35)
-
+    # ========== параметры траектории =============
     points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
 
-    traj = tj.gen_gpr_scanning_traj(points=points, line_types=l_types)
-    et_ctrl_ = tj.control_from_traj(traj)
-
-    time = traj[:,0]
-    n = traj.shape[0]
-    et_odom = np.hstack((traj[:,1].reshape((n,1)), traj[:,2].reshape((n,1)), et_ctrl_[:,0].reshape((n,1))))
-    et_ctrl = np.hstack((et_ctrl_[:,2].reshape((n,1)), et_ctrl_[:,1].reshape((n,1))))
+    # ========== запуск моделирования =============
+    lgr = Logger()
+    num_steps, time = run_modelling(points=points, line_types=l_types, ctrl=mr_ctrl, lgr=lgr)
 
     # ========== настройка окна анимации =============
+    plt.rcParams.update({
+        'font.size': '16',
+        'font.family': 'arial',
+        'font.style': 'italic',
+        'font.weight': 'bold',
+        'axes.titlesize': 'medium',
+        'axes.titleweight': 'bold',
+        'axes.linewidth': '1.1',
+    })
     width = 2
     shift_x = 1
     shift_y = 1
@@ -120,50 +123,40 @@ if __name__ == '__main__':
     real, = ax.plot([], [], lw=3, c='r')
     trace, = ax.plot([], [], 'o', lw=1, ms=1, c='r')
 
-    ax.scatter(traj[:, 1], traj[:,2], c=traj[:, 0], s=0.8)
+    ax.scatter(lgr['et_odom'][:, 0], lgr['et_odom'][:, 1], c=lgr['time'], s=0.8)
     time_template = 'time = %.1fs'
     time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
 
-    # ========== функция анимации и расчёта управления =============  
-    # замечание! тк управление осуществляетя внутри функции анимации:
-    #       1) анимация работает медленнее;
-    #       2) если масштабировать окно впроцессе анимации позиция модели МР может сбиться.
-    # TODO: исправить этот косяк, если отсанется время
     trace_x = []
     trace_y = []
-    ctrl_logger = Logger()
-
     def animate(i):
         """Анимация."""
-        odom, vel, omega = mr_ctrl.tick(et_odom[i], et_ctrl[i])
-        ctrl_logger.log('vel', vel)
-        ctrl_logger.log('omega', omega)
-        ctrl_logger.log('time', time[i])
 
-        anim_et_x, anim_et_y = get_arrow(et_odom[i])
-        anim_x, anim_y = get_arrow(odom)
-        trace_x.append(odom[0])
-        trace_y.append(odom[1])
+        anim_et_x, anim_et_y = get_arrow(lgr['et_odom'][i])
+        anim_x, anim_y = get_arrow(lgr['odom'][i])
+        trace_x.append(lgr['odom'][i][0])
+        trace_y.append(lgr['odom'][i][1])
 
         etalon.set_data(anim_et_x, anim_et_y)
         real.set_data(anim_x, anim_y)
         trace.set_data(trace_x,trace_y)
-        time_text.set_text(time_template % time[i])
+        time_text.set_text(time_template % lgr['time'][i])
         return etalon, real, trace, time_text
 
-    start_anim(fig, animate, frames_num=n, time_interval=time[-1])
+    start_anim(fig, animate, frames_num=num_steps, time_interval=time)
 
     ctrl_fig = plt.figure('Управляющие сигналы МР')
+    plt.title('Управляющие сигналы МР')
     gs = ctrl_fig.add_gridspec(2, 1, figure=ctrl_fig)
     vel = ctrl_fig.add_subplot(gs[0, 0])
     omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
 
     vel.set_ylabel('Линейная скорость, [м/с]')
-    vel.plot(ctrl_logger['time'], ctrl_logger['vel'])
+    vel.plot(lgr['time'], lgr['vel'])
     vel.grid()
 
     omega.set_ylabel('Угловая скорость, [рад/с]')
     omega.set_xlabel('Время, [с]')
-    omega.plot(ctrl_logger['time'], ctrl_logger['omega'])
+    omega.plot(lgr['time'], lgr['omega'])
     omega.grid()
     plt.show()

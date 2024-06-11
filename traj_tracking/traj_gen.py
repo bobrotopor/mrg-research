@@ -22,7 +22,7 @@ class TrajGenGPR(object):
 
 
     def gen_gpr_scanning_traj(self, points: NDArray, line_types: list):
-        """Сгенерировать всю траекторию движения МР, с метками времени и флажками включения георадара."""
+        """Сгенерировать всю траекторию движения МР, с метками времени."""
         is_first_iter = True
         scan_traj = np.empty((0,3)) # time/x/y
         line_types = ['pass'] + line_types
@@ -142,8 +142,6 @@ if __name__ == '__main__':
         'axes.titlesize': 'medium',
         'axes.titleweight': 'bold',
         'axes.linewidth': '1.1',
-        # 'text.usetex': True,
-        # 'axes.prop_cycle': cycler('color',[...]),
     })
 
     plt.figure('Траектория')
