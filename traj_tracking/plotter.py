@@ -15,7 +15,7 @@ def plot_ctrl_mr(lgr: Logger):
     omega = ctrl_fig.add_subplot(gs[1, 0], sharex=vel)
 
     vel.set_ylabel('Линейная скорость, \n[м/с]')
-    vel.plot(lgr['time'], lgr['vel'])
+    vel.plot(lgr['time'], lgr['vel'], c='g')
     vel.grid()
 
     omega.set_ylabel('Угловая скорость, \n[рад/с]')

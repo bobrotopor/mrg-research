@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # ========== модель МР и контроллер ==========
     mr_model = VelocityModelMR(
         dt=0.01,
-        init_odom=[0, 0, 0.57],
+        init_odom=[0.1, -0.1, 0.57],
         scan_v=0.4,
         max_v=0.7,
         max_w=2.44,
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     )
     
     mr_ctrl = Controller(
-        k=[2,10,5], 
+        k=[2,35,5], 
         ctrl_type='rot',
         sat_type='global',
         mr_model=mr_model,
