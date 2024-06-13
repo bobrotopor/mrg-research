@@ -94,8 +94,8 @@ if __name__ == '__main__':
     )
     
     mr_ctrl = Controller(
-        k=[3,9,0], 
-        ctrl_type='approx',
+        k=[2,35,5], 
+        ctrl_type='rot',
         sat_type='global',
         mr_model=mr_model,
     )
