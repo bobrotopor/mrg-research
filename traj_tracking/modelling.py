@@ -19,10 +19,11 @@ def run_modelling(points, line_types, ctrl: Controller, lgr: Logger):
 
     for idx in range(n):
 
-        odom, vel, omega = ctrl.tick(et_odom[idx], et_ctrl[idx])
+        odom, vel, omega, errs = ctrl.tick(et_odom[idx], et_ctrl[idx])
         lgr.log('vel', vel)
         lgr.log('omega', omega)
         lgr.log('odom', odom)
+        lgr.log('errs', errs)
 
     lgr.data_dict['time'] = time
     lgr.data_dict['et_odom'] = et_odom

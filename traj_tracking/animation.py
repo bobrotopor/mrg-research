@@ -65,6 +65,7 @@ def keyboard_handler(fig, anim_fun, frames_num, time_interval, lgr: Logger):
             plt.show()
         case 'g':
             tr_plt.plot_ctrl_mr(lgr)
+            tr_plt.plot_errors(lgr)
             plt.show()
         case _:
             return
@@ -93,8 +94,8 @@ if __name__ == '__main__':
     )
     
     mr_ctrl = Controller(
-        k=[2,35,5], 
-        ctrl_type='rot',
+        k=[3,9,0], 
+        ctrl_type='approx',
         sat_type='global',
         mr_model=mr_model,
     )
@@ -108,15 +109,7 @@ if __name__ == '__main__':
     num_steps, anim_time = run_modelling(points=points, line_types=l_types, ctrl=mr_ctrl, lgr=lgr)
 
     # ========== настройка окна анимации =============
-    plt.rcParams.update({
-        'font.size': '16',
-        'font.family': 'arial',
-        'font.style': 'italic',
-        'font.weight': 'bold',
-        'axes.titlesize': 'medium',
-        'axes.titleweight': 'bold',
-        'axes.linewidth': '1.1',
-    })
+    tr_plt.configure_mpl_plot()
     width = 2
     shift_x = 1
     shift_y = 1

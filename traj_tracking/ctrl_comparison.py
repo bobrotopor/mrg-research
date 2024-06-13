@@ -1,10 +1,8 @@
 """Сравнение регуляторов."""
 
 import numpy as np
-from numpy.typing import NDArray
-from matplotlib import pyplot as plt
 
-from controller import Controller, unpack_vec3, VelocityModelMR
+from controller import Controller, VelocityModelMR
 from logger import Logger
 from modelling import run_modelling
 import plotter as tr_plt
@@ -23,9 +21,16 @@ if __name__ == '__main__':
         max_dwdt=5.5,
     )
     
-    mr_ctrl = Controller(
+    rot_ctrl = Controller(
         k=[2,35,5], 
         ctrl_type='rot',
+        sat_type='global',
+        mr_model=mr_model,
+    )
+
+    approx_ctrl = Controller(
+        k=[3,9,0], 
+        ctrl_type='approx',
         sat_type='global',
         mr_model=mr_model,
     )
@@ -35,7 +40,14 @@ if __name__ == '__main__':
     l_types = ['l', 'c', 'l', 'c', 'l']
 
     # ========== запуск моделирования =============
-    lgr = Logger()
-    num_steps, anim_time = run_modelling(points=points, line_types=l_types, ctrl=mr_ctrl, lgr=lgr)
+    rot_lgr = Logger(name='Регулятор 1 (матричный)')
+    approx_lgr = Logger(name='Регулятор 2 (линеаризованный)')
 
-    
+    run_modelling(points=points, line_types=l_types, ctrl=rot_ctrl, lgr=rot_lgr)
+    mr_model.reset_odom()
+    run_modelling(points=points, line_types=l_types, ctrl=approx_ctrl, lgr=approx_lgr)
+
+    tr_plt.configure_mpl_plot()
+    tr_plt.plot_ctrl_mr(rot_lgr, approx_lgr)
+    tr_plt.plot_errors(rot_lgr, approx_lgr)
+    tr_plt.show()
