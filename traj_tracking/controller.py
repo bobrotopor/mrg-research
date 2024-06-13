@@ -57,7 +57,8 @@ class VelocityModelMR():
         max_dvdt: float,
         max_dwdt: float,
     ):
-        self.odom = np.array(init_odom)
+        self.init_odom = np.array(init_odom)
+        self.odom = self.init_odom.copy()
         self.dt = dt
         self.scan_v = scan_v
         self.max_v = max_v 
@@ -67,11 +68,19 @@ class VelocityModelMR():
 
 
     def tick(self, cmd_vel, cmd_omega):
+        """Шаг модели."""
         theta = self.odom[2]
         self.odom[0] += cmd_vel*cos(theta)*self.dt
         self.odom[1] += cmd_vel*sin(theta)*self.dt
         self.odom[2] += cmd_omega*self.dt
         return self.odom
+    
+    def reset_odom(self, new_odom: NDArray = None):
+        """Переустановить значение параметров ориентации МР."""
+        if new_odom is None:
+            self.odom = self.init_odom
+        else:
+            self.odom = new_odom
     
         
 class Controller():
@@ -146,11 +155,14 @@ class Controller():
         et_vel = et_ctrl[0] 
         et_omega = et_ctrl[1]
         
+        err_to_comparison = np.zeros(3)
         if self.ctrl_type == 'approx':
             err = self.calc_err(et_odom)
+            err_to_comparison = err
             vel,omega = self.approx_ctrl(et_theta, et_vel, et_omega, err)
         if self.ctrl_type == 'rot':
             err = self.calc_rot_method_err(et_odom)
+            err_to_comparison = self.calc_err(et_odom)
             vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
         if self.sat_type == 'global':
             sat_cmd = self.sat.lsat(np.array([vel, omega]))
@@ -161,5 +173,5 @@ class Controller():
         # эволюция местоположения модели МР
         self.mr_model.tick(cmd_vel=vel, cmd_omega=omega)
 
-        return self.mr_model.odom, vel, omega
+        return self.mr_model.odom, vel, omega, err_to_comparison
     

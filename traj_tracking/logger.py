@@ -4,10 +4,14 @@ import numpy as np
 
 class Logger(object):
 
-    def __init__(self, console_print: bool = False) -> None:
+    def __init__(self, name: str = None, console_print: bool = False) -> None:
         self.data_dict = {}
         self.data_shapes = {}
         self.console_print = console_print
+        if name is None:
+            self.name = ''
+        else:
+            self.name = name 
 
     def __getitem__(self,key):
         return self.data_dict[key]
