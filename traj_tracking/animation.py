@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 from matplotlib import pyplot as plt
 
-from controller import Controller, unpack_vec3, VelocityModelMR
+from controller import Controller, unpack_vec3, MobileRobot
 from logger import Logger
 from modelling import run_modelling
 import plotter as tr_plt
@@ -82,19 +82,29 @@ if __name__ == '__main__':
 
     activate_ffmpeg(FFMPEG_EXE_PATH)
 
+    # dt=0.01,
+    # init_odom=[0.1, -0.1, 0.57],
+    # scan_v=0.4,
+    # max_v=0.7,
+    # max_w=2.44,
+    # max_dvdt=2,
+    # max_dwdt=5,
+
     # ========== модель МР и контроллер ==========
-    mr_model = VelocityModelMR(
+    mr_model = MobileRobot(
         dt=0.01,
-        init_odom=[0.1, -0.1, 0.57],
+        init_odom=[0, 0, 1.57],
         scan_v=0.4,
-        max_v=0.7,
+        max_v=1,
         max_w=2.44,
-        max_dvdt=0.5,
-        max_dwdt=5.5,
+        max_dvdt=2,
+        max_dwdt=5,
+        cv=0.367,
+        cw=48.992,
     )
     
     mr_ctrl = Controller(
-        k=[2,35,5], 
+        k=[5,35,5], 
         ctrl_type='rot',
         sat_type='global',
         mr_model=mr_model,

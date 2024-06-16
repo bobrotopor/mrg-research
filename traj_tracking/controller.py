@@ -45,8 +45,8 @@ class Saturator():
         return self.sat_cmd
 
 
-class VelocityModelMR():
-    """Скоростная модель мобильного робота."""
+class MobileRobot():
+    """Модель мобильного робота."""
     def __init__(
         self, 
         dt: float, 
@@ -56,23 +56,41 @@ class VelocityModelMR():
         max_w: float,
         max_dvdt: float,
         max_dwdt: float,
+        cv: float = None,
+        cw: float = None,
     ):
         self.init_odom = np.array(init_odom)
         self.odom = self.init_odom.copy()
+        self.vels = np.zeros(2)
         self.dt = dt
         self.scan_v = scan_v
         self.max_v = max_v 
         self.max_w = max_w 
         self.max_dvdt = max_dvdt
         self.max_dwdt = max_dwdt
+        # параметры динамики
+        self.cv = cv
+        self.cw = cw
 
 
     def tick(self, cmd_vel, cmd_omega):
         """Шаг модели."""
-        theta = self.odom[2]
-        self.odom[0] += cmd_vel*cos(theta)*self.dt
-        self.odom[1] += cmd_vel*sin(theta)*self.dt
-        self.odom[2] += cmd_omega*self.dt
+
+        if self.cv and self.cw is None:
+            self.odom[2] += cmd_omega*self.dt
+            theta = self.odom[2]
+            self.odom[0] += cmd_vel*cos(theta)*self.dt
+            self.odom[1] += cmd_vel*sin(theta)*self.dt
+            
+
+        else:
+            self.vels[0] += self.dt*self.cv*(cmd_vel-self.vels[0])
+            self.vels[1] += self.dt*self.cw*(cmd_omega-self.vels[1])
+            self.odom[2] += self.vels[1]*self.dt
+            theta = self.odom[2]
+            self.odom[0] += self.vels[0]*cos(theta)*self.dt
+            self.odom[1] += self.vels[0]*sin(theta)*self.dt
+
         return self.odom
     
     def reset_odom(self, new_odom: NDArray = None):
@@ -87,7 +105,7 @@ class Controller():
 
     def __init__(
         self, 
-        mr_model: VelocityModelMR,
+        mr_model: MobileRobot,
         k: list, 
         ctrl_type: str ='approx', 
         sat_type: str = None,

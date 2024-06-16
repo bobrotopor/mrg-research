@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from controller import Controller, VelocityModelMR
+from controller import Controller, MobileRobot
 from logger import Logger
 from modelling import run_modelling
 import plotter as tr_plt
@@ -11,7 +11,7 @@ import plotter as tr_plt
 if __name__ == '__main__':
 
     # ========== модель МР и контроллер ==========
-    mr_model = VelocityModelMR(
+    mr_model = MobileRobot(
         dt=0.01,
         init_odom=[0.1, -0.1, 0.57],
         scan_v=0.4,
