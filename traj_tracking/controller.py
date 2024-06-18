@@ -118,7 +118,7 @@ class Controller():
         self.ctrl_type = ctrl_type
         self.sat_type = sat_type
 
-        if ctrl_type != 'approx' and ctrl_type !='rot':
+        if ctrl_type != 'approx' and ctrl_type !='matrix':
             raise Exception('Ошибка имени контроллера!')
         
         self.mr_model = mr_model
@@ -137,7 +137,7 @@ class Controller():
         err = self.mr_model.odom - et_odom
         return err
     
-    def calc_rot_method_err(self, et_odom: NDArray) -> NDArray:
+    def calc_matrix_ctrl_err(self, et_odom: NDArray) -> NDArray:
         """Вычислить вектор ошибок для метода матрицы поворота."""
         et_x,et_y,et_theta = unpack_vec3(et_odom)
         x,y,theta = unpack_vec3(self.mr_model.odom)
@@ -161,7 +161,7 @@ class Controller():
 
         return vel, omega
     
-    def rot_method_ctrl(self, et_vel, et_omega, err):
+    def matrix_ctrl(self, et_vel, et_omega, err):
         """Регулятор полученный методом матрицы поворота."""
         vel = et_vel*cos(err[2]) + self.k1*err[0]
         omega = et_omega + self.k2*err[1]*et_vel*sin(err[2])/err[2] + self.k3*err[2]
@@ -178,10 +178,10 @@ class Controller():
             err = self.calc_err(et_odom)
             err_to_comparison = err
             vel,omega = self.approx_ctrl(et_theta, et_vel, et_omega, err)
-        if self.ctrl_type == 'rot':
-            err = self.calc_rot_method_err(et_odom)
+        if self.ctrl_type == 'matrix':
+            err = self.calc_matrix_ctrl_err(et_odom)
             err_to_comparison = self.calc_err(et_odom)
-            vel,omega = self.rot_method_ctrl(et_vel, et_omega, err)
+            vel,omega = self.matrix_ctrl(et_vel, et_omega, err)
         if self.sat_type == 'global':
             sat_cmd = self.sat.lsat(np.array([vel, omega]))
             cmd = self.sat.accel_lim(sat_cmd)

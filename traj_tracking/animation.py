@@ -82,36 +82,31 @@ if __name__ == '__main__':
 
     activate_ffmpeg(FFMPEG_EXE_PATH)
 
-    # dt=0.01,
-    # init_odom=[0.1, -0.1, 0.57],
-    # scan_v=0.4,
-    # max_v=0.7,
-    # max_w=2.44,
-    # max_dvdt=2,
-    # max_dwdt=5,
+    init_odom = [-0.4, 0.5, -2]
+    ctrl_type = 'matrix'
+    k = [1,20,3]
+
+    # init_odom = [-0.4, 0.5, -2]
+    # ctrl_type = 'approx'
+    # k = [2,2,0]
 
     # ========== модель МР и контроллер ==========
     mr_model = MobileRobot(
         dt=0.01,
-        init_odom=[0, 0, 1.57],
+        init_odom=init_odom,
         scan_v=0.4,
         max_v=1,
         max_w=2.44,
         max_dvdt=2,
         max_dwdt=5,
-        cv=0.367,
-        cw=48.992,
+        cv=1.515,  # cv=0.367,              
+        cw=4, # cw=20.576,             
     )
     
-    mr_ctrl = Controller(
-        k=[5,35,5], 
-        ctrl_type='rot',
-        sat_type='global',
-        mr_model=mr_model,
-    )
+    mr_ctrl = Controller(k=k, ctrl_type=ctrl_type, sat_type='global', mr_model=mr_model)
 
     # ========== параметры траектории =============
-    points = np.array([[0,0],[0,1],[0.5,1],[0.5,-0.25], [1,-0.25], [1,1.25]])
+    points = np.array([[0,0],[0,1.5],[0.75,1.5],[0.75,-0.25], [1.5,-0.25], [1.5,1.25]])
     l_types = ['l', 'c', 'l', 'c', 'l']
 
     # ========== запуск моделирования =============
@@ -124,6 +119,7 @@ if __name__ == '__main__':
     shift_x = 1
     shift_y = 1
     fig = plt.figure(figsize=(7, 6))
+    fig.suptitle(f'Тип регулятора - {ctrl_type}\nk = {k}, init_pose = {init_odom}')
     ax = fig.add_subplot(
         autoscale_on=False, 
         xlim=(-width + shift_x, width + shift_x), ylim=(-width + shift_y, width + shift_y),
